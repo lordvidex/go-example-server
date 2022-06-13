@@ -1,4 +1,4 @@
-# go-example-server <a href="https://pkg.go.dev/github.com/lordvidex/go-example-server"><img src="https://pkg.go.dev/badge/github.com/lordvidex/go-example-server.svg" alt="Go Reference"></a>  
+# go-example-server <a href="https://github.com/lordvidex/go-example-server"><img src="https://pkg.go.dev/badge/github.com/lordvidex/go-example-server.svg" alt="Go Reference"></a>  
 Learning golang for servers and microservices
 
 ## How To Run?
