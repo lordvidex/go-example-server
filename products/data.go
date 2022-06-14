@@ -1,4 +1,4 @@
-package data
+package products
 
 import (
 	"encoding/json"
@@ -13,8 +13,9 @@ type Product struct {
 	Description string `json:"description"`
 }
 
-func (p *Product) FromJSON(reader io.Reader) error {
-	return json.NewDecoder(reader).Decode(p)
+func (p *Product) FromJSON(reader io.Reader) (err error) {
+	err = json.NewDecoder(reader).Decode(p)
+	return
 }
 
 func (p *Product) ToJSON(writer io.Writer) error {

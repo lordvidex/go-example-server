@@ -1,4 +1,4 @@
-package repository
+package products
 
 import (
 	"encoding/json"
@@ -6,6 +6,23 @@ import (
 	"os"
 	"path/filepath"
 )
+
+type repository struct {
+}
+
+// replace with db instance fetch
+var products []*Product
+
+// custom repo functions here
+
+func (r *repository) GetProducts() ([]*Product, error) {
+	return products, nil
+}
+
+// NewRepository returns a repository instance
+func NewRepository() *repository {
+	return &repository{}
+}
 
 func init() {
 	// load JSON data from data/mock.json
@@ -17,7 +34,7 @@ func init() {
 
 func loadData() (err error) {
 	var byteValue []byte
-	file, err := os.Open(filepath.Join("data", "mock.json")) // open file
+	file, err := os.Open(filepath.Join("products", "mock.json")) // open file
 	if err != nil {
 		goto END
 	}

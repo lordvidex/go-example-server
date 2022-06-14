@@ -8,7 +8,11 @@ The server and client processes can be started with the following make commands.
 ```bash
 make server # starts the REST & gRPC server
 ```
-**gRPC client**
+**gRPC client** *(get single item)*
 ```bash
-make client # starts the gRPC client
+bash ./client.sh # returns a single item through gRPC
+```
+**gRPC client** *(get all item)*
+```bash
+bash ./client.sh -all # returns a stream of items through gRPC
 ```

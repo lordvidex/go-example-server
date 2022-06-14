@@ -4,11 +4,14 @@ option go_package="/protos";
 
 service Product {
   rpc GetProduct(ProductRequest) returns (ProductResponse);
+  rpc GetProducts(Empty) returns (stream ProductResponse);
 }
 
 message ProductRequest {
   string id = 1;
 }
+
+message Empty {}
 
 message ProductResponse {
   string id = 1;

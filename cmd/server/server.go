@@ -1,15 +1,13 @@
 package main
 
 import (
-	"context"
+	"github.com/lordvidex/go-example-server/products"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"log"
 	"net/http"
 	"strings"
 
-	"github.com/lordvidex/go-example-server/handlers"
-	"github.com/lordvidex/go-example-server/protos"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c" // needed for allowing http and grpc on the same port
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -23,8 +21,8 @@ type app struct {
 	grpcRouter http.Handler
 }
 
-func NewApp(http http.Handler, grpc http.Handler) app {
-	return app{
+func NewApp(http http.Handler, grpc http.Handler) *app {
+	return &app{
 		http, grpc,
 	}
 }
@@ -37,36 +35,32 @@ func (a app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type productProtoController struct {
-	protos.UnimplementedProductServer
-}
-
-func (productProtoController) GetProduct(c context.Context, r *protos.ProductRequest) (*protos.ProductResponse, error) {
-	return handlers.GetProductsGRPC()
-}
-
-func setupHTTPRouter() http.Handler {
-	router := http.NewServeMux()
-	router.HandleFunc("/product", handlers.GetProductsHTTP)
-	// router.HandleFunc("/order", handlers.GetOrders)
-	return router
-}
-
-func setupGRPCServer() (srv *grpc.Server) {
-	srv = grpc.NewServer()
-	pr := productProtoController{}
-	protos.RegisterProductServer(srv, pr)
-	reflection.Register(srv)
-	return
-}
-
 func main() {
+	// grpc server
+	grpcServer := setupGRPCServer()
+
+	// http server
+	router := http.NewServeMux()
+
+	// create new product handler
+	prh := products.NewHandler(*products.NewRepository(), grpcServer)
+
+	// setup routes
+	// TODO: introduce sub routers later and let prh have single sub router for all requests
+	router.HandleFunc("/product", prh.GetProductsHTTP)
+
 	// create new app
-	app := NewApp(setupHTTPRouter(), setupGRPCServer())
+	app := NewApp(router, grpcServer)
 
 	// HTTP server
 	err := http.ListenAndServe(":"+HttpPort, h2c.NewHandler(app, &http2.Server{}))
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func setupGRPCServer() (srv *grpc.Server) {
+	srv = grpc.NewServer()
+	reflection.Register(srv)
+	return
 }
