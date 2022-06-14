@@ -3,6 +3,7 @@ package products
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -28,7 +29,7 @@ func init() {
 	// load JSON data from data/mock.json
 	err := loadData()
 	if err != nil {
-		panic("An error occured loading json data: " + err.Error())
+		log.Println("mock JSON data was not loaded with stacktrace ", err.Error())
 	}
 }
 
