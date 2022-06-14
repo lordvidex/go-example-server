@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var addr = "localhost:50051"
+var addr = "localhost:8081"
 
 func main() {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))

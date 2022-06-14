@@ -2,23 +2,41 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"net/http"
+	"strings"
+
 	"github.com/lordvidex/go-example-server/data"
 	"github.com/lordvidex/go-example-server/handlers"
 	"github.com/lordvidex/go-example-server/protos"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c" // needed for allowing http and grpc on the same port
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"log"
-	"net"
-	"net/http"
-	"os"
-	"sync"
 )
 
 const (
-	HttpPort = "8080"
-	GrpcPort = "50051"
+	HttpPort = "8081"
 )
+
+type app struct {
+	httpRouter http.Handler
+	grpcRouter http.Handler
+}
+
+func NewApp(http http.Handler, grpc http.Handler) app {
+	return app{
+		http, grpc,
+	}
+}
+
+func (a app) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+		a.grpcRouter.ServeHTTP(w, r)
+	} else {
+		a.httpRouter.ServeHTTP(w, r)
+	}
+}
 
 type productProtoController struct {
 	protos.UnimplementedProductServer
@@ -49,36 +67,12 @@ func setupGRPCServer() (srv *grpc.Server) {
 }
 
 func main() {
+	// create new app
+	app := NewApp(setupHTTPRouter(), setupGRPCServer())
 
-	// create a wait group
-	wg := sync.WaitGroup{}
-	wg.Add(2) // for two goroutines
-
-	// HTTP methods for router
-	router := setupHTTPRouter()
-
-	// GRPC methods and routes
-	grpcServer := setupGRPCServer()
-
-	go func() {
-		err := http.ListenAndServe(":"+HttpPort, router)
-		defer wg.Done()
-		if err != nil {
-			return
-		}
-	}()
-
-	go func() {
-		lis, err := net.Listen("tcp", ":"+GrpcPort)
-		defer wg.Done()
-		if err != nil {
-			fmt.Println(fmt.Errorf("error occured starting in another port"))
-			os.Exit(-1)
-		}
-		err = grpcServer.Serve(lis)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-	}()
-	wg.Wait()
+	// HTTP server
+	err := http.ListenAndServe(":"+HttpPort, h2c.NewHandler(app, &http2.Server{}))
+	if err != nil {
+		log.Fatal(err)
+	}
 }
