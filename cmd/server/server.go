@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lordvidex/go-example-server/data"
 	"github.com/lordvidex/go-example-server/handlers"
 	"github.com/lordvidex/go-example-server/protos"
 	"golang.org/x/net/http2"
@@ -43,18 +42,13 @@ type productProtoController struct {
 }
 
 func (productProtoController) GetProduct(c context.Context, r *protos.ProductRequest) (*protos.ProductResponse, error) {
-	log.Printf("I received a request of %s", r.GetId())
-	return &protos.ProductResponse{
-		Id:          "12",
-		Name:        "This is who I am",
-		Description: "This is what I'm saying",
-	}, nil
+	return handlers.GetProductsGRPC()
 }
 
 func setupHTTPRouter() http.Handler {
 	router := http.NewServeMux()
-	router.Handle("/product", handlers.NewProduct(data.Product{}))
-	router.Handle("/order", handlers.NewOrder())
+	router.HandleFunc("/product", handlers.GetProductsHTTP)
+	// router.HandleFunc("/order", handlers.GetOrders)
 	return router
 }
 
