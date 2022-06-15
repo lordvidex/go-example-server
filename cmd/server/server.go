@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	. "github.com/lordvidex/go-example-server/internal/middleware"
 	"github.com/lordvidex/go-example-server/products"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -24,7 +25,7 @@ type app struct {
 
 func NewApp(http http.Handler, grpc http.Handler) *app {
 	return &app{
-		http, grpc,
+		RemoveTrailingSlash(http), grpc,
 	}
 }
 
@@ -43,7 +44,6 @@ func main() {
 	// http server
 	//router := http.NewServeMux()
 	router := gin.Default()
-	router.RedirectTrailingSlash = false
 
 	// create new product handler
 	_ = products.NewHandler(*products.NewRepository(),

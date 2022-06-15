@@ -31,8 +31,8 @@ func NewHandler(repo repository, grpc *grpc.Server, group *gin.RouterGroup) *han
 }
 
 func (h *handler) registerHTTPHandlers(group *gin.RouterGroup) {
-	group.GET(`/?`, gin.WrapF(h.GetProductsHTTP))
-	group.GET(`:id/?`, h.GetSingleProductHTTP)
+	group.GET("", gin.WrapF(h.GetProductsHTTP))
+	group.GET(":id", h.GetSingleProductHTTP)
 	group.POST("", h.CreateProductsHTTP)
 }
 
