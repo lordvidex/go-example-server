@@ -3,8 +3,11 @@ package products
 import (
 	"context"
 	"encoding/json"
+	"github.com/gin-gonic/gin"
+	"github.com/lordvidex/go-example-server/internal/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -20,14 +23,21 @@ type handler struct {
 	protos.UnimplementedProductServer
 }
 
-func NewHandler(repo repository, grpc *grpc.Server) *handler {
+func NewHandler(repo repository, grpc *grpc.Server, group *gin.RouterGroup) *handler {
 	h := &handler{repo: repo}
+	h.registerHTTPHandlers(group)
 	protos.RegisterProductServer(grpc, h)
 	return h
 }
 
+func (h *handler) registerHTTPHandlers(group *gin.RouterGroup) {
+	group.GET("", h.GetProductsHTTP)
+	group.POST("", h.CreateProductsHTTP)
+}
+
 // GetProductsHTTP returns the first product we have through HTTP GET request
-func (h *handler) GetProductsHTTP(w http.ResponseWriter, _ *http.Request) {
+func (h *handler) GetProductsHTTP(c *gin.Context) {
+	w := c.Writer
 	products, err := h.repo.GetProducts()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -46,6 +56,24 @@ func (h *handler) GetProductsHTTP(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("An error occured"))
 		return
 	}
+}
+
+func (h *handler) CreateProductsHTTP(c *gin.Context) {
+	var product Product
+	err := c.BindJSON(&product)
+	if err != nil {
+		err = (&errors.BadRequest{}).ToJSON(c.Writer)
+		if err != nil {
+			log.Print("Error: ", err)
+			return
+		}
+	}
+	product, err = h.repo.AddProduct(product)
+	if err != nil {
+		_ = (&errors.InternalServerError{}).ToJSON(c.Writer)
+		return
+	}
+	c.JSON(http.StatusCreated, product)
 }
 
 func (h *handler) GetProduct(c context.Context, r *protos.ProductRequest) (*protos.ProductResponse, error) {

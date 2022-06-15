@@ -20,6 +20,11 @@ func (r *repository) GetProducts() ([]*Product, error) {
 	return products, nil
 }
 
+func (r *repository) AddProduct(product Product) (Product, error) {
+	products = append(products, &product)
+	return product, nil
+}
+
 // NewRepository returns a repository instance
 func NewRepository() *repository {
 	return &repository{}
