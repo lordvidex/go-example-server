@@ -31,13 +31,29 @@ func NewHandler(repo repository, grpc *grpc.Server, group *gin.RouterGroup) *han
 }
 
 func (h *handler) registerHTTPHandlers(group *gin.RouterGroup) {
-	group.GET("", h.GetProductsHTTP)
+	group.GET("", gin.WrapF(h.GetProductsHTTP))
+	group.GET(":id", h.GetSingleProductHTTP)
 	group.POST("", h.CreateProductsHTTP)
 }
 
+// GetSingleProductHTTP returns a single product through HTTP GET request
+func (h *handler) GetSingleProductHTTP(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		panic("Invalid id")
+	}
+	res, err := h.repo.GetProductWithId(id)
+	log.Println(res, err)
+	if err != nil {
+		er := err.(errors.NotFound)
+		c.Writer.WriteHeader(er.StatusCode())
+		c.JSON(er.StatusCode(), er)
+	}
+	c.JSON(http.StatusOK, res)
+}
+
 // GetProductsHTTP returns the first product we have through HTTP GET request
-func (h *handler) GetProductsHTTP(c *gin.Context) {
-	w := c.Writer
+func (h *handler) GetProductsHTTP(w http.ResponseWriter, _ *http.Request) {
 	products, err := h.repo.GetProducts()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

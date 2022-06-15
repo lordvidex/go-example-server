@@ -2,6 +2,7 @@ package products
 
 import (
 	"encoding/json"
+	"github.com/lordvidex/go-example-server/internal/errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,6 +19,15 @@ var products []*Product
 
 func (r *repository) GetProducts() ([]*Product, error) {
 	return products, nil
+}
+
+func (r *repository) GetProductWithId(id int) (*Product, errors.HTTPError) {
+	for _, product := range products {
+		if product.Id == id {
+			return product, nil
+		}
+	}
+	return nil, &errors.NotFound{}
 }
 
 func (r *repository) AddProduct(product Product) (Product, error) {

@@ -17,7 +17,9 @@ type HTTPError interface {
 }
 
 // generalHTTPError is the default HTTPError struct
-type generalHTTPError struct{}
+type generalHTTPError struct {
+	error
+}
 
 // StatusCode is 500 for unimplemented error status codes
 func (generalHTTPError) StatusCode() int {
