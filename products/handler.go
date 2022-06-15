@@ -31,8 +31,8 @@ func NewHandler(repo repository, grpc *grpc.Server, group *gin.RouterGroup) *han
 }
 
 func (h *handler) registerHTTPHandlers(group *gin.RouterGroup) {
-	group.GET("", gin.WrapF(h.GetProductsHTTP))
-	group.GET(":id", h.GetSingleProductHTTP)
+	group.GET(`/?`, gin.WrapF(h.GetProductsHTTP))
+	group.GET(`:id/?`, h.GetSingleProductHTTP)
 	group.POST("", h.CreateProductsHTTP)
 }
 
@@ -45,9 +45,13 @@ func (h *handler) GetSingleProductHTTP(c *gin.Context) {
 	res, err := h.repo.GetProductWithId(id)
 	log.Println(res, err)
 	if err != nil {
-		er := err.(errors.NotFound)
-		c.Writer.WriteHeader(er.StatusCode())
-		c.JSON(er.StatusCode(), er)
+		if er, ok := err.(errors.NotFound); ok {
+			c.Writer.WriteHeader(er.StatusCode())
+			_ = er.ToJSON(c.Writer)
+		} else {
+			log.Fatal("Failed to parse error to JSON", err)
+		}
+		return
 	}
 	c.JSON(http.StatusOK, res)
 }

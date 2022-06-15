@@ -11,9 +11,28 @@ import (
 //and a StatusMessage() which contains a short description of the error
 type HTTPError interface {
 	StatusCode() int
-	StatusMessage(string) string
+	StatusMessage() string
 	ToJSON(io.Writer) error
 	mustEmbedGeneralHTTPError()
+	error
+}
+
+// ErrorToJSON converts an error type to JSON and writes to provided writer
+func ErrorToJSON(e HTTPError, w *io.Writer) error {
+	data := map[string]interface{}{
+		"statusCode":    e.StatusCode(),
+		"statusMessage": e.StatusMessage(),
+	}
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	// write to writer
+	_, err = (*w).Write(bytes)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // generalHTTPError is the default HTTPError struct
@@ -26,25 +45,12 @@ func (generalHTTPError) StatusCode() int {
 	return http.StatusInternalServerError
 }
 
-func (*generalHTTPError) mustEmbedGeneralHTTPError() {}
+func (generalHTTPError) mustEmbedGeneralHTTPError() {}
 
 // ToJSON is the default implementation for converting an error type to
 // JSON to be sent in the response body
 func (g *generalHTTPError) ToJSON(w io.Writer) error {
-	data := map[string]interface{}{
-		"statusCode":    g.StatusCode(),
-		"statusMessage": g.StatusMessage(),
-	}
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	// write to writer
-	_, err = w.Write(bytes)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ErrorToJSON(g, &w)
 }
 
 // StatusMessage looks up the already defined map[int]string from the http package containing
@@ -61,10 +67,12 @@ type NotFound struct {
 func (e NotFound) StatusCode() int {
 	return http.StatusNotFound
 }
-
-//func (e *NotFound) StatusMessage() string {
-//	return http.StatusText(e.StatusCode())
-//}
+func (e NotFound) StatusMessage() string {
+	return http.StatusText(e.StatusCode())
+}
+func (e NotFound) ToJSON(w io.Writer) error {
+	return ErrorToJSON(&e, &w)
+}
 
 // BadRequest - HTTP error for 400 error code
 type BadRequest struct {

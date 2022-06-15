@@ -27,7 +27,7 @@ func (r *repository) GetProductWithId(id int) (*Product, errors.HTTPError) {
 			return product, nil
 		}
 	}
-	return nil, &errors.NotFound{}
+	return nil, errors.NotFound{}
 }
 
 func (r *repository) AddProduct(product Product) (Product, error) {
