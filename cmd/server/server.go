@@ -1,19 +1,23 @@
 package main
 
 import (
-	"github.com/lordvidex/go-example-server/products"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"github.com/gin-gonic/gin"
+
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/lordvidex/go-example-server/internal/common/middleware"
+	"github.com/lordvidex/go-example-server/internal/products"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 const (
-	HttpPort = "8081"
+	HttpPort = "3000"
 )
 
 type app struct {
@@ -23,7 +27,7 @@ type app struct {
 
 func NewApp(http http.Handler, grpc http.Handler) *app {
 	return &app{
-		http, grpc,
+		middleware.RemoveTrailingSlash(http), grpc,
 	}
 }
 
@@ -40,14 +44,13 @@ func main() {
 	grpcServer := setupGRPCServer()
 
 	// http server
-	router := http.NewServeMux()
+	//router := http.NewServeMux()
+	router := gin.Default()
 
 	// create new product handler
-	prh := products.NewHandler(*products.NewRepository(), grpcServer)
-
-	// setup routes
-	// TODO: introduce sub routers later and let prh have single sub router for all requests
-	router.HandleFunc("/product", prh.GetProductsHTTP)
+	_ = products.NewHandler(*products.NewRepository(),
+		grpcServer,
+		router.Group("/product"))
 
 	// create new app
 	app := NewApp(router, grpcServer)
