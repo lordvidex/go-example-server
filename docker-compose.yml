@@ -1,0 +1,30 @@
+services:
+  postgres:
+    container_name: goexampleserver
+    image: postgres:14.3
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/pg/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_is_ready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  go:
+    container_name: go
+    build:
+      context: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  dbdata:

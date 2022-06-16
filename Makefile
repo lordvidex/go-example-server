@@ -1,7 +1,7 @@
-.PHONY: protos
+.PHONY: pb
 server:
 	go run ./cmd/server/
 test:
 	go test ./...
-protos:
-	protoc -I protos/ --go_out=. --go-grpc_out=. protos/product.proto
+pb:
+	protoc -I internal/pb/ --go_out=. --go-grpc_out=. internal/pb/product.proto
