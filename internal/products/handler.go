@@ -98,11 +98,15 @@ func (h *handler) CreateProductsHTTP(c *gin.Context) {
 }
 
 func (h *handler) GetProduct(c context.Context, r *pb.ProductRequest) (*pb.ProductResponse, error) {
-	products, err := h.repo.GetProducts()
+	i, err := strconv.Atoi(r.Id)
 	if err != nil {
 		return nil, err
 	}
-	return productToProto(*products[0]), nil
+	product, err := h.repo.GetProductWithId(i)
+	if err != nil {
+		return nil, err
+	}
+	return productToProto(*product), nil
 }
 
 func (h *handler) GetProducts(_ *pb.Empty, srv pb.Product_GetProductsServer) error {

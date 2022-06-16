@@ -3,3 +3,4 @@ WORKDIR /go/src/go-example-server
 COPY . .
 RUN go build -o bin/server cmd/server/server.go
 CMD [ "./bin/server" ]
+EXPOSE 3000

@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var addr = "localhost:8080"
+var addr = ":3000"
 var (
 	all = flag.Bool("all", false, "get all products")
 )
