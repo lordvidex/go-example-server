@@ -82,12 +82,10 @@ func (h *handler) GetProductsHTTP(w http.ResponseWriter, _ *http.Request) {
 func (h *handler) CreateProductsHTTP(c *gin.Context) {
 	var product Product
 	err := c.BindJSON(&product)
-	if err != nil {
-		err = (&errors.BadRequest{}).ToJSON(c.Writer)
-		if err != nil {
-			log.Print("Error: ", err)
-			return
-		}
+	if err != nil || !product.Validate() {
+		c.Writer.WriteHeader(http.StatusBadRequest)
+		_ = (&errors.BadRequest{}).ToJSON(c.Writer)
+		return
 	}
 	product, err = h.repo.AddProduct(product)
 	if err != nil {

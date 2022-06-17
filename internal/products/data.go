@@ -23,3 +23,10 @@ func (p *Product) FromJSON(reader io.Reader) (err error) {
 func (p *Product) ToJSON(writer io.Writer) error {
 	return json.NewEncoder(writer).Encode(p)
 }
+
+func (p *Product) Validate() bool {
+	if p.Id == 0 || p.Name == "" || p.Description == "" {
+		return false
+	}
+	return true
+}

@@ -85,6 +85,9 @@ func (e *BadRequest) StatusMessage() string {
 func (e *BadRequest) StatusCode() int {
 	return http.StatusBadRequest
 }
+func (e *BadRequest) ToJSON(w io.Writer) error {
+	return ErrorToJSON(e, &w)
+}
 
 // InternalServerError - HTTP error for 500 error code
 type InternalServerError struct {
