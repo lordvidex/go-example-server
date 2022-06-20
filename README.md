@@ -31,7 +31,7 @@ bash ./client.sh # returns a single item through gRPC
 bash ./client.sh -all # returns a stream of items through gRPC
 ```
 OR.   
-**with grpcurl**
+**with [grpcurl](https://pkg.go.dev/github.com/fullstorydev/grpcurl#section-readme)**
 ```bash
 grpcurl -d '{"id": "2"}' --plaintext localhost:3000 Product.GetProduct # get single  
 
