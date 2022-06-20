@@ -14,7 +14,7 @@ make server # starts the REST & gRPC server
 OR
 **Docker**
 ```bash
-docker-compose run -p 3000:3000 go
+docker-compose up
 ```
 
 > ### Client

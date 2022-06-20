@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 
 	"log"
 	"net/http"
@@ -45,15 +45,16 @@ func main() {
 
 	// http server
 	//router := http.NewServeMux()
-	router := gin.Default()
+	router := mux.NewRouter()
 
 	// create new product handler
+	productRouter := router.PathPrefix("/product").Subrouter()
 	_ = products.NewHandler(*products.NewRepository(),
 		grpcServer,
-		router.Group("/product"))
+		productRouter)
 
 	// create new app
-	app := NewApp(router, grpcServer)
+	app := middleware.Recover(NewApp(router, grpcServer))
 
 	// HTTP server
 	err := http.ListenAndServe(":"+HttpPort, h2c.NewHandler(app, &http2.Server{}))

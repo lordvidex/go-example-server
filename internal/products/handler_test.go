@@ -2,7 +2,8 @@ package products
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/lordvidex/go-example-server/internal/pb"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ func TestHandler_GetSingleProductHTTP(t *testing.T) {
 		{id: "1", expectedStatus: http.StatusOK},
 		{id: "2", expectedStatus: http.StatusOK},
 		{id: "13", expectedStatus: http.StatusNotFound},
+		{id: "OP", expectedStatus: http.StatusBadRequest},
 	}
 	for _, tt := range testCases {
 		t.Run("When id is "+tt.id, func(t *testing.T) {
@@ -27,16 +29,15 @@ func TestHandler_GetSingleProductHTTP(t *testing.T) {
 			h := &handler{
 				repo: *mockRepository(),
 			}
-			c := makeGinMock()
-
-			c.AddParam("id", tt.id)
-
+			r := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/product/%s", tt.id), nil)
+			r = mux.SetURLVars(r, map[string]string{"id": tt.id})
+			w := httptest.NewRecorder()
 			// when
-			h.GetSingleProductHTTP(c)
+			h.GetSingleProductHTTP(w, r)
 
 			// then
-			if c.Writer.Status() != tt.expectedStatus {
-				t.Errorf("Expected status %d, got %d", tt.expectedStatus, c.Writer.Status())
+			if w.Code != tt.expectedStatus {
+				t.Errorf("Expected status %d, got %d", tt.expectedStatus, w.Code)
 			}
 		})
 	}
@@ -79,9 +80,8 @@ func TestHandler_CreateProductsHTTP(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
-			c.Request = httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tt.json))
-			h.CreateProductsHTTP(c)
+			r := httptest.NewRequest(http.MethodPost, "/product/", strings.NewReader(tt.json))
+			h.CreateProductsHTTP(w, r)
 
 			if w.Code != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, w.Code)

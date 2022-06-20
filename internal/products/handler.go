@@ -3,12 +3,12 @@ package products
 import (
 	"context"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
-	"github.com/lordvidex/go-example-server/internal/common/errors"
+	myerrors "github.com/lordvidex/go-example-server/internal/common/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -24,37 +24,41 @@ type handler struct {
 	pb.UnimplementedProductServer
 }
 
-func NewHandler(repo repository, grpc *grpc.Server, group *gin.RouterGroup) *handler {
+func NewHandler(repo repository, grpc *grpc.Server, router *mux.Router) *handler {
 	h := &handler{repo: repo}
-	h.registerHTTPHandlers(group)
+	h.registerHTTPHandlers(router)
 	pb.RegisterProductServer(grpc, h)
 	return h
 }
 
-func (h *handler) registerHTTPHandlers(group *gin.RouterGroup) {
-	group.GET("", gin.WrapF(h.GetProductsHTTP))
-	group.GET(":id", h.GetSingleProductHTTP)
-	group.POST("", h.CreateProductsHTTP)
+func (h *handler) registerHTTPHandlers(router *mux.Router) {
+	router.HandleFunc("/{id}", h.GetSingleProductHTTP).Methods("GET")
+	router.HandleFunc("", h.GetProductsHTTP).Methods("GET")
+	router.HandleFunc("", h.CreateProductsHTTP).Methods("POST")
 }
 
 // GetSingleProductHTTP returns a single product through HTTP GET request
-func (h *handler) GetSingleProductHTTP(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+func (h *handler) GetSingleProductHTTP(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		panic("Invalid id")
+		r := myerrors.BadRequest{}
+		w.WriteHeader(http.StatusBadRequest)
+		_ = r.ToJSON(w)
+		return
 	}
 	res, err := h.repo.GetProductWithId(id)
-	log.Println(res, err)
 	if err != nil {
-		if er, ok := err.(errors.NotFound); ok {
-			c.Writer.WriteHeader(er.StatusCode())
-			_ = er.ToJSON(c.Writer)
+		if er, ok := err.(myerrors.NotFound); ok {
+			w.WriteHeader(er.StatusCode())
+			_ = er.ToJSON(w)
 		} else {
 			log.Fatal("Failed to parse error to JSON", err)
 		}
 		return
 	}
-	c.JSON(http.StatusOK, res)
+	w.WriteHeader(http.StatusOK)
+	_ = res.ToJSON(w)
 }
 
 // GetProductsHTTP returns the first product we have through HTTP GET request
@@ -79,30 +83,32 @@ func (h *handler) GetProductsHTTP(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func (h *handler) CreateProductsHTTP(c *gin.Context) {
+func (h *handler) CreateProductsHTTP(w http.ResponseWriter, r *http.Request) {
 	var product Product
-	err := c.BindJSON(&product)
+
+	err := product.FromJSON(r.Body)
 	if err != nil || !product.Validate() {
-		c.Writer.WriteHeader(http.StatusBadRequest)
-		_ = (&errors.BadRequest{}).ToJSON(c.Writer)
+		w.WriteHeader(http.StatusBadRequest)
+		_ = (&myerrors.BadRequest{}).ToJSON(w)
 		return
 	}
 	product, err = h.repo.AddProduct(product)
 	if err != nil {
-		_ = (&errors.InternalServerError{}).ToJSON(c.Writer)
+		_ = (&myerrors.InternalServerError{}).ToJSON(w)
 		return
 	}
-	c.JSON(http.StatusCreated, product)
+	w.WriteHeader(http.StatusCreated)
+	_ = product.ToJSON(w)
 }
 
-func (h *handler) GetProduct(c context.Context, r *pb.ProductRequest) (*pb.ProductResponse, error) {
+func (h *handler) GetProduct(_ context.Context, r *pb.ProductRequest) (*pb.ProductResponse, error) {
 	i, err := strconv.Atoi(r.Id)
 	if err != nil {
 		return nil, err
 	}
 	product, err := h.repo.GetProductWithId(i)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.NotFound, "Product not found")
 	}
 	return productToProto(*product), nil
 }

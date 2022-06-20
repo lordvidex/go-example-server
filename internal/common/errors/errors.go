@@ -49,7 +49,7 @@ func (generalHTTPError) mustEmbedGeneralHTTPError() {}
 
 // ToJSON is the default implementation for converting an error type to
 // JSON to be sent in the response body
-func (g *generalHTTPError) ToJSON(w io.Writer) error {
+func (g generalHTTPError) ToJSON(w io.Writer) error {
 	return ErrorToJSON(g, &w)
 }
 
