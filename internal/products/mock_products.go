@@ -1,11 +1,8 @@
 package products
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/lordvidex/go-example-server/internal/pb"
 	"google.golang.org/grpc"
-	"net/http"
-	"net/http/httptest"
 	"strconv"
 )
 
@@ -23,13 +20,6 @@ func (m mockGetProductsServer) Send(response *pb.ProductResponse) error {
 		Description: response.Description,
 	})
 	return err
-}
-
-// makeGinMock returns a mock gin context
-func makeGinMock() *gin.Context {
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = &http.Request{}
-	return c
 }
 
 // mockRepository returns a stub of our repository struct with 3 products
